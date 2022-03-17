@@ -8,6 +8,15 @@ export async function shortUrl(req, res) {
   if (!url) return res.sendStatus(400);
 
   try {
+    const urlUserExist = await connection.query(
+      `SELECT * FROM urls WHERE "userId" = $1 AND url = $2 `,
+      [user.id, url]
+    );
+
+    if (urlUserExist.rowCount > 0) {
+      return res.sendStatus(409);
+    }
+
     const shortUrl = randomstring.generate({
       length: 8,
       capitalization: "lowercase",
@@ -20,18 +29,28 @@ export async function shortUrl(req, res) {
         `,
       [user.id, 0, shortUrl, url]
     );
-    res.sendStatus(201);
+    res.status(201).send({ shortUrl });
   } catch (err) {
     res.sendStatus(500);
   }
 }
 
-export function getUrl(req, res) {
+export async function getUrl(req, res) {
   const { shortUrl } = req.params;
+  console.log(shortUrl);
 
   try {
-    console.log(url);
-    res.sendStatus(200);
+    const shortUrlExist = await connection.query(
+      `SELECT * FROM urls WHERE "shortUrl" = $1`,
+      [shortUrl]
+    );
+
+    if (!shortUrlExist.rowCount > 0) {
+      return res.sendStatus(404);
+    }
+
+    const { id, url } = shortUrlExist.rows[0];
+    res.status(200).send({ id, shortUrl, url });
   } catch (err) {
     res.sendStatus(500);
   }
