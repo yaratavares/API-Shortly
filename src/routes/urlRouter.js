@@ -13,6 +13,6 @@ urlRouter.post(
   shortUrl
 );
 urlRouter.get("/urls/:shortUrl", getUrl);
-urlRouter.delete("/urls/:id", deleteUrl);
+urlRouter.delete("/urls/:id", validateTokenMiddleware, deleteUrl);
 
 export default urlRouter;

@@ -31,6 +31,7 @@ export async function shortUrl(req, res) {
     );
     res.status(201).send({ shortUrl });
   } catch (err) {
+    console.log(err);
     res.sendStatus(500);
   }
 }
@@ -52,17 +53,35 @@ export async function getUrl(req, res) {
     const { id, url } = shortUrlExist.rows[0];
     res.status(200).send({ id, shortUrl, url });
   } catch (err) {
+    console.log(err);
     res.sendStatus(500);
   }
 }
 
-export function deleteUrl(req, res) {
+export async function deleteUrl(req, res) {
+  const { user } = res.locals;
   const { id } = req.params;
 
+  if (!id) return res.sendStatus(400);
+
   try {
-    console.log(id);
+    const urlAuth = await connection.query(`SELECT * FROM urls WHERE id = $1`, [
+      id,
+    ]);
+
+    if (!urlAuth.rowCount > 0) {
+      return res.sendStatus(404);
+    }
+
+    const userId = urlAuth.rows[0].userId;
+    if (userId !== user.id) {
+      return res.sendStatus(401);
+    }
+
+    await connection.query("DELETE FROM urls WHERE id = $1", [id]);
     res.sendStatus(204);
   } catch (err) {
+    console.log(err);
     res.sendStatus(500);
   }
 }
