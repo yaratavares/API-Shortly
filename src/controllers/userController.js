@@ -40,3 +40,35 @@ export async function getUser(req, res) {
     return res.sendStatus(500);
   }
 }
+
+export async function getIdUser(req, res) {
+  const { id } = req.params;
+
+  try {
+    const userExist = await connection.query(
+      `SELECT id AS "userId", name FROM users WHERE id = $1`,
+      [id]
+    );
+
+    if (!userExist.rowCount > 0) {
+      return res.sendStatus(404);
+    }
+
+    const { userId, name } = userExist.rows[0];
+
+    const selectRanking = await connection.query(
+      `SELECT id, "visitCount", "shortUrl", url FROM urls
+      WHERE "userId" = ${id}
+      `
+    );
+
+    const shortenedUrls = selectRanking.rows;
+
+    let objectUser = { id: userId, name, visitCount: 0, shortenedUrls };
+
+    res.status(200).send(objectUser);
+  } catch (err) {
+    console.log(err);
+    res.sendStatus(500);
+  }
+}
